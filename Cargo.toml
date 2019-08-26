@@ -1,0 +1,10 @@
+[package]
+name = "openssl-windows-build"
+version = "0.1.0"
+authors = ["Josh Matthews <josh@joshmatthews.net>"]
+edition = "2018"
+
+[dependencies]
+openssl-src = { git = "https://github.com/servo/openssl-src-rs", branch = "servo" }
+walkdir = "2"
+zip = "0.5.2"
