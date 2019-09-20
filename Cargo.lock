@@ -66,7 +66,7 @@ dependencies = [
 [[package]]
 name = "openssl-src"
 version = "111.3.0+1.1.1c"
-source = "git+https://github.com/servo/openssl-src-rs?branch=servo#ccdac32abdf225fc09d7b5ad9c74a13c820ddeae"
+source = "git+https://github.com/servo/openssl-src-rs?branch=servo#5b027739f3e3238fdaa4f1023022493e42aab5e7"
 dependencies = [
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

@@ -5,10 +5,14 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str;
 
-fn build_for_target(target: &str, arg: &str) -> PathBuf {
+fn build_for_target(target: &str, args: &[&str]) -> PathBuf {
     // Set up the compilation environment.
     env::set_var("HOST", "x86_64-pc-windows-msvc");
-    let vcvars = Command::new(Path::new("src").join("vcvars.bat")).arg(arg).output().unwrap();
+    let mut vcvars = Command::new(Path::new("src").join("vcvars.bat"));
+    for arg in args {
+        vcvars.arg(arg);
+    }
+    let vcvars = vcvars.output().unwrap();
     assert!(vcvars.status.success());
     let output = str::from_utf8(&vcvars.stdout).unwrap();
     for line in output.lines() {
@@ -22,7 +26,7 @@ fn build_for_target(target: &str, arg: &str) -> PathBuf {
 
     // Build OpenSSL.
     let out_dir = env::current_dir().unwrap().join("openssl-build").join(target);
-    //openssl_src::Build::new().target(target).out_dir(out_dir.clone()).build();
+    openssl_src::Build::new().target(target).out_dir(out_dir.clone()).build();
     // Return the path to the /install subdirectory that we care about.
     out_dir.join("install")
 }
@@ -34,8 +38,8 @@ fn main() -> io::Result<()> {
     }
 
     let targets = &[
-        ("aarch64-pc-windows-msvc", "arm64-windows", "x64_arm64"),
-        ("x86_64-pc-windows-msvc", "x64-windows", "x64"),
+        ("aarch64-uwp-windows-msvc", "arm64-windows", &["x64_arm64", "uwp"]),
+        ("x86_64-uwp-windows-msvc", "x64-windows", &["x64", "uwp"]),
     ];
 
     let version = openssl_src::version();
@@ -44,8 +48,8 @@ fn main() -> io::Result<()> {
     let options = zip::write::FileOptions::default();
 
     let mut buffer = Vec::new();
-    for &(target, subdir, vcvars_arg) in targets.iter() {
-        let built = build_for_target(target, vcvars_arg);
+    for &(target, subdir, vcvars_args) in targets.iter() {
+        let built = build_for_target(target, vcvars_args);
         let prefix = built.clone();
         zip.add_directory(subdir, options)?;
         for entry in walkdir::WalkDir::new(built) {
