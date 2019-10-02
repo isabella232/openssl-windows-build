@@ -38,24 +38,30 @@ fn main() -> io::Result<()> {
     }
 
     let targets = &[
-        ("aarch64-uwp-windows-msvc", "arm64-windows", &["x64_arm64", "uwp"]),
-        ("x86_64-uwp-windows-msvc", "x64-windows", &["x64", "uwp"]),
+        ("aarch64-uwp-windows-msvc", "arm64-windows-uwp", &["x64_arm64", "uwp"][..]),
+        ("x86_64-uwp-windows-msvc", "x64-windows-uwp", &["x64", "uwp"][..]),
+        ("aarch64-pc-windows-msvc", "arm64-windows", &["x64_arm64"][..]),
+        ("x86_64-pc-windows-msvc", "x64-windows", &["x64"][..]),
     ];
 
     let version = openssl_src::version();
-    let mut archive = File::create(&format!("{}-vs2017.zip", version))?;
+    let name = format!("openssl-{}-vs2017-2019-09-18", version);
+    let mut archive = File::create(&format!("{}.zip", name))?;
     let mut zip = zip::ZipWriter::new(&mut archive);
     let options = zip::write::FileOptions::default();
 
     let mut buffer = Vec::new();
     for &(target, subdir, vcvars_args) in targets.iter() {
         let built = build_for_target(target, vcvars_args);
+        //let built = format!("{}/{}", "openssl-build", target);
+        let built = format!("{}/install", built);
         let prefix = built.clone();
-        zip.add_directory(subdir, options)?;
+        let base_path = PathBuf::from(&name).join(subdir);
+        zip.add_directory_from_path(&base_path, options)?;
         for entry in walkdir::WalkDir::new(built) {
             let entry = entry.unwrap();
             let path = entry.path();
-            let name = PathBuf::from(subdir).join(path.strip_prefix(Path::new(&prefix)).unwrap());
+            let name = base_path.join(path.strip_prefix(Path::new(&prefix)).unwrap());
             println!("Adding {}", name.display());
             if path.is_file() {
                 zip.start_file_from_path(&name, options)?;
